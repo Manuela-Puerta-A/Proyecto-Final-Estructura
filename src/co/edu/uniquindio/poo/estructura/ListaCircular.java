@@ -39,7 +39,7 @@ public class ListaCircular<T> {
         }
         Nodo<T> aux = nodoUltimo.getSiguiente();
         for (int i = 0; i < size; i++) {
-            lista.finalM(aux.getDato());
+            lista.agregarFinal(aux.getDato());
             aux = aux.getSiguiente();
         }
         return lista;
