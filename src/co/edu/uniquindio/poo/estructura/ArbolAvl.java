@@ -2,7 +2,6 @@ package co.edu.uniquindio.poo.estructura;
 
 import co.edu.uniquindio.poo.nodo.NodoArbol;
 
-
 public class ArbolAVL<T extends Comparable<T>> {
 
     private NodoArbol<T> raiz;
@@ -21,7 +20,6 @@ public class ArbolAVL<T extends Comparable<T>> {
         return altura(raiz);
     }
 
-  
     public void insertar(T elemento) {
         raiz = insertar(raiz, elemento);
     }
@@ -43,7 +41,6 @@ public class ArbolAVL<T extends Comparable<T>> {
         return balancear(raizAux);
     }
 
-   
     public void eliminar(T elemento) {
         raiz = eliminar(raiz, elemento);
     }
@@ -80,7 +77,6 @@ public class ArbolAVL<T extends Comparable<T>> {
         return buscarMayor(raizAux.getHijoDerecho());
     }
 
-
     private int altura(NodoArbol<T> nodo) {
         if (nodo == null) {
             return 0;
@@ -92,7 +88,6 @@ public class ArbolAVL<T extends Comparable<T>> {
         nodo.setAltura(1 + Math.max(altura(nodo.getHijoIzquierdo()), altura(nodo.getHijoDerecho())));
     }
 
-    
     private int fe(NodoArbol<T> nodo) {
         return altura(nodo.getHijoIzquierdo()) - altura(nodo.getHijoDerecho());
     }
@@ -100,15 +95,15 @@ public class ArbolAVL<T extends Comparable<T>> {
     private NodoArbol<T> balancear(NodoArbol<T> nodo) {
         actualizarAltura(nodo);
         int fe = fe(nodo);
-        if (fe > 1) { 
+        if (fe > 1) {
             if (fe(nodo.getHijoIzquierdo()) < 0) {
-                nodo.setHijoIzquierdo(rotarIzquierda(nodo.getHijoIzquierdo())); 
+                nodo.setHijoIzquierdo(rotarIzquierda(nodo.getHijoIzquierdo()));
             }
             return rotarDerecha(nodo);
         }
-        if (fe < -1) { 
+        if (fe < -1) {
             if (fe(nodo.getHijoDerecho()) > 0) {
-                nodo.setHijoDerecho(rotarDerecha(nodo.getHijoDerecho())); 
+                nodo.setHijoDerecho(rotarDerecha(nodo.getHijoDerecho()));
             }
             return rotarIzquierda(nodo);
         }
@@ -170,4 +165,3 @@ public class ArbolAVL<T extends Comparable<T>> {
         return estaBalanceado(raizAux.getHijoIzquierdo()) && estaBalanceado(raizAux.getHijoDerecho());
     }
 }
-
