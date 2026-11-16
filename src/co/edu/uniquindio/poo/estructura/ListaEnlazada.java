@@ -68,5 +68,6 @@ public class ListaEnlazada<T> implements Iterable<T> {
                 return dato;
             }
         };
+
     }
 }
