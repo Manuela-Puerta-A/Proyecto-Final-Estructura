@@ -1,29 +1,34 @@
 package co.edu.uniquindio.poo.estructura;
-import co.edu.uniquindio.poo.nodo.Nodo;
+
 import java.util.NoSuchElementException;
+
+import co.edu.uniquindio.poo.nodo.Nodo;
 
 public class Cola<T> {
 
-    private int size;
     private Nodo<T> nodoPrimero;
     private Nodo<T> nodoUltimo;
     private int limite;
+    private int size;
 
     public Cola(int limite) {
-        size = 0;
-        nodoPrimero = null;
-        nodoUltimo = null;
+        this.size = 0;
+        this.nodoPrimero = null;
+        this.nodoUltimo = null;
         this.limite = limite;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
     }
 
     public int getSize() {
         return size;
     }
 
-
     public void encolar(T dato) {
         if (size == limite) {
-      System.out.println("La cola esta llena");     
+            System.out.println("La cola esta llena");
         }
 
         Nodo<T> nuevoNodo = new Nodo<T>(dato);
@@ -51,15 +56,21 @@ public class Cola<T> {
         }
     }
 
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
     public void imprimir() {
         Nodo<T> auxiliar = nodoPrimero;
         while (auxiliar != null) {
             System.out.print(auxiliar.getDato() + " -> ");
             auxiliar = auxiliar.getSiguiente();
         }
+    }
+
+    public ListaEnlazada<T> listar() {
+        ListaEnlazada<T> lista = new ListaEnlazada<>();
+        Nodo<T> aux = nodoPrimero;
+        while (aux != null) {
+            lista.agregarFinal(aux.getDato());
+            aux = aux.getSiguiente();
+        }
+        return lista;
     }
 }
