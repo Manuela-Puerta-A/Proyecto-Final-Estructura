@@ -149,6 +149,12 @@
                             </select>
                             <button class="btn btn-primary">Mover</button>
                         </form>
+                        <form action="/revertir" method="post">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <button class="btn btn-danger btn-sm">Revertir ultima transaccion</button>
+                            (en la pila hay <span th:text="${cliente.reversibles.size}"></span>)
+                        </form>
+
 
                         <p class="text-muted small mb-2">
                             Retiro: cargo de $2. Transferencia: comision del 1% (menos si tienes mejor rango).
