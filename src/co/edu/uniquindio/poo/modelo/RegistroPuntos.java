@@ -1,6 +1,5 @@
 package co.edu.uniquindio.poo.modelo;
 
-
 public class RegistroPuntos implements Comparable<RegistroPuntos> {
 
     private String clienteId;
@@ -20,7 +19,6 @@ public class RegistroPuntos implements Comparable<RegistroPuntos> {
         }
         return this.clienteId.compareTo(otro.clienteId);
     }
-
 
     public String getRango() {
         return Cliente.calcularRango(puntos);
