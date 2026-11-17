@@ -94,7 +94,8 @@ public class Banco {
     public void retirar(String id, double monto) {
         validarMonto(monto);
         Cliente cliente = buscarCliente(id);
-        double cargo = 2;
+        double cargo = monto * 0.004;
+        cargo = Math.round(cargo * 100) / 100.0;
         if (dia <= cliente.getRetirosGratisHastaDia()) {
             cargo = 0;
         }
@@ -340,7 +341,7 @@ public class Banco {
         cliente.notificar(dia, "Se revirtio la transaccion #" + t.getId() + " (" + t.getTipo() + ")");
     }
 
-     public void programar(String tipo, String id, String destino, double monto, int enDias, int cadaDias) {
+    public void programar(String tipo, String id, String destino, double monto, int enDias, int cadaDias) {
         validarMonto(monto);
         buscarCliente(id);
         if (tipo.equals("TRANSFERENCIA")) {
@@ -355,7 +356,6 @@ public class Banco {
     public ListaEnlazada<Programada> getProgramadas() {
         return programadas.listar();
     }
-
 
     public void avanzarDia() {
         dia++;
@@ -374,7 +374,7 @@ public class Banco {
             } catch (RuntimeException e) {
                 cliente.notificar(dia, "No se pudo ejecutar tu " + p.getTipo() + " programado: " + e.getMessage());
             }
-            if (p.getCadaDias() > 0) { 
+            if (p.getCadaDias() > 0) {
                 p.setDia(dia + p.getCadaDias());
                 programadas.encolar(p);
             }
@@ -387,26 +387,21 @@ public class Banco {
         }
     }
 
-
     public ListaEnlazada<String> leerNotificaciones(String id) {
         return buscarCliente(id).leerNotificaciones();
     }
-
 
     public HashMap<String, Double> transferenciasDe(String id) {
         return grafoTransferencias.getVecinos(id);
     }
 
-   
     public ListaEnlazada<String> redDeTransferencias(String id) {
         return grafoTransferencias.recorridoAnchura(id);
     }
 
-   
     public HashMap<String, Double> gastosPorCategoria(String id) {
         return grafoGastos.getVecinos(id);
     }
-
 
     public String categoriaPrincipal(String id) {
         String mayor = "Ninguna";
@@ -421,7 +416,6 @@ public class Banco {
         return mayor;
     }
 
-
     public HashMap<String, Double> gastoTotalPorCategoria() {
         HashMap<String, Double> totales = new HashMap<>();
         for (String id : clientes.keySet()) {
@@ -433,7 +427,6 @@ public class Banco {
         return totales;
     }
 
-   
     public ListaEnlazada<String> patronesDeGasto() {
         ListaEnlazada<String> patrones = new ListaEnlazada<>();
         for (String categoria : CATEGORIAS) {
@@ -446,10 +439,9 @@ public class Banco {
         return patrones;
     }
 
-   
     public ListaEnlazada<String> movimientosDeMonederos(String id) {
         ListaEnlazada<String> lista = new ListaEnlazada<>();
-        String[] monederos = {id + "-Principal", id + "-Ahorros"};
+        String[] monederos = { id + "-Principal", id + "-Ahorros" };
         for (String monedero : monederos) {
             HashMap<String, Double> destinos = grafoMonederos.getVecinos(monedero);
             for (String destino : destinos.keySet()) {
@@ -459,7 +451,6 @@ public class Banco {
         return lista;
     }
 
-    
     public ListaEnlazada<String> verificarIntegridad(String id) {
         ListaEnlazada<String> resultado = new ListaEnlazada<>();
         Cliente cliente = buscarCliente(id);
@@ -467,16 +458,19 @@ public class Banco {
         double saldoCalculado = sumarSaldo(cliente.getHistorial().getPrimero(), id);
         double saldoReal = cliente.getSaldo() + cliente.getAhorros();
         if (Math.abs(saldoCalculado - saldoReal) > 0.01) {
-            resultado.agregarFinal("ERROR: el historial da $" + dinero(saldoCalculado) + " pero el cliente tiene $" + dinero(saldoReal));
+            resultado.agregarFinal("ERROR: el historial da $" + dinero(saldoCalculado) + " pero el cliente tiene $"
+                    + dinero(saldoReal));
         } else {
             resultado.agregarFinal("OK: el saldo total ($" + dinero(saldoReal) + ") coincide con el historial");
         }
 
         int puntosCalculados = sumarPuntos(cliente.getHistorial().getPrimero(), id);
         if (puntosCalculados != cliente.getPuntos() || puntosCalculados != consultarPuntos(id)) {
-            resultado.agregarFinal("ERROR: el historial da " + puntosCalculados + " puntos pero hay " + cliente.getPuntos());
+            resultado.agregarFinal(
+                    "ERROR: el historial da " + puntosCalculados + " puntos pero hay " + cliente.getPuntos());
         } else {
-            resultado.agregarFinal("OK: los puntos (" + puntosCalculados + ") coinciden con el historial y la tabla hash");
+            resultado.agregarFinal(
+                    "OK: los puntos (" + puntosCalculados + ") coinciden con el historial y la tabla hash");
         }
 
         int disponibles = sumarMovimientos(cliente.getHistorialPuntos().getPrimero());
@@ -509,10 +503,10 @@ public class Banco {
                 if (t.getOrigen().equals(id)) {
                     efecto = -t.getMonto() - t.getComision();
                 } else {
-                    efecto = t.getMonto(); 
+                    efecto = t.getMonto();
                 }
             }
-           
+
         }
         return efecto + sumarSaldo(nodo.getSiguiente(), id);
     }
@@ -536,7 +530,6 @@ public class Banco {
         return nodo.getDato().getCantidad() + sumarMovimientos(nodo.getSiguiente());
     }
 
-   
     private void registrar(Cliente cliente, Transaccion t) {
         cliente.getHistorial().agregarFinal(t);
         cliente.getReversibles().push(t);
@@ -587,7 +580,6 @@ public class Banco {
         programar("DEPOSITO", "C2", null, 1000, 1, 7);
         programar("TRANSFERENCIA", "C1", "C3", 200, 2, 0);
     }
-
 
     private String dinero(double valor) {
         return String.format("%.2f", valor);
