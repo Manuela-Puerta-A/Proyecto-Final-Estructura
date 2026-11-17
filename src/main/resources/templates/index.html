@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Monedero Virtual - Mi cuenta</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/estilos.css">
+</head>
+
+<body>
+
+    <!-- Menu -->
+    <nav class="navbar navbar-expand navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand">Monedero Virtual</span>
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link active" th:href="@{/(id=${cliente.id})}">Mi cuenta</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/puntos(id=${cliente.id})}">Puntos y rangos</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/reportes(id=${cliente.id})}">Programadas y
+                        reportes</a></li>
+            </ul>
+            <span class="navbar-text text-white" th:text="'Dia ' + ${dia}"></span>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Mensajes despues de cada accion -->
+        <div class="alert alert-success ok" th:if="${mensaje}" th:text="${mensaje}"></div>
+        <div class="alert alert-danger error" th:if="${error}" th:text="${error}"></div>
+
+        <!-- Elegir cliente o registrar uno nuevo -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <form action="/" method="get" class="input-group">
+                            <span class="input-group-text">Cliente</span>
+                            <select name="id" class="form-select">
+                                <option th:each="c : ${clientes}" th:value="${c.id}"
+                                    th:text="${c.id} + ' - ' + ${c.nombre}" th:selected="${c.id == cliente.id}">
+                                </option>
+                            </select>
+                            <button class="btn btn-primary">Ver</button>
+                        </form>
+                    </div>
+                    <div class="col-md-7">
+                        <form action="/registrar" method="post" class="input-group">
+                            <span class="input-group-text">Nuevo cliente</span>
+                            <input name="nuevoId" class="form-control" placeholder="Id (ej: C5)" required>
+                            <input name="nombre" class="form-control" placeholder="Nombre" required>
+                            <button class="btn btn-success">Registrar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-3" th:text="${cliente.nombre}"></h3>
+
+        <!-- Consulta de saldo y puntos -->
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Monedero principal</p>
+                        <h4 th:text="'$' + ${#numbers.formatDecimal(cliente.saldo, 1, 2)}"></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Monedero ahorros</p>
+                        <h4 th:text="'$' + ${#numbers.formatDecimal(cliente.ahorros, 1, 2)}"></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Puntos acumulados</p>
+                        <h4 th:text="${cliente.puntos}"></h4>
+                        <small class="text-muted" th:text="'Disponibles: ' + ${cliente.puntosDisponibles}"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Rango</p>
+                        <h4><span th:class="'badge rango-' + ${cliente.rango}" th:text="${cliente.rango}"></span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <!-- Operaciones -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">Operaciones</div>
+                    <div class="card-body">
+                        <form action="/depositar" method="post" class="input-group mb-2">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <span class="input-group-text">Depositar $</span>
+                            <input name="monto" type="number" step="0.01" class="form-control" required>
+                            <button class="btn btn-primary">Depositar</button>
+                        </form>
+
+                        <form action="/retirar" method="post" class="input-group mb-2">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <span class="input-group-text">Retirar $</span>
+                            <input name="monto" type="number" step="0.01" class="form-control" required>
+                            <button class="btn btn-primary">Retirar</button>
+                        </form>
+
+                        <form action="/transferir" method="post" class="input-group mb-2">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <span class="input-group-text">Transferir $</span>
+                            <input name="monto" type="number" step="0.01" class="form-control" required>
+                            <select name="destino" class="form-select">
+                                <option th:each="c : ${clientes}" th:if="${c.id != cliente.id}" th:value="${c.id}"
+                                    th:text="'a ' + ${c.nombre}"></option>
+                            </select>
+                            <button class="btn btn-primary">Transferir</button>
+                        </form>
+
+                        <form action="/gastar" method="post" class="input-group mb-2">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <span class="input-group-text">Gastar $</span>
+                            <input name="monto" type="number" step="0.01" class="form-control" required>
+                            <select name="categoria" class="form-select">
+                                <option th:each="cat : ${categorias}" th:value="${cat}" th:text="'en ' + ${cat}">
+                                </option>
+                            </select>
+                            <button class="btn btn-primary">Pagar</button>
+                        </form>
+
+                        <form action="/mover" method="post" class="input-group mb-2">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <span class="input-group-text">Mover $</span>
+                            <input name="monto" type="number" step="0.01" class="form-control" required>
+                            <select name="hacia" class="form-select">
+                                <option value="Ahorros">a Ahorros</option>
+                                <option value="Principal">a Principal</option>
+                            </select>
+                            <button class="btn btn-primary">Mover</button>
+                        </form>
+
+                        <p class="text-muted small mb-2">
+                            Retiro: cargo de $2. Transferencia: comision del 1% (menos si tienes mejor rango).
+                        </p>
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notificaciones -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        Notificaciones
+                        <span class="badge bg-danger" th:text="${cliente.noLeidas.size}"></span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><b>Sin leer</b> <small class="text-muted">(cola)</small></p>
+                        <ul class="list-group mb-2">
+                            <li class="list-group-item list-group-item-warning"
+                                th:each="n : ${cliente.noLeidas.listar()}" th:text="${n}"></li>
+                            <li class="list-group-item text-muted" th:if="${cliente.noLeidas.size == 0}">No tienes
+                                notificaciones nuevas</li>
+                        </ul>
+                        <form action="/leer" method="post" class="mb-3">
+                            <input type="hidden" name="id" th:value="${cliente.id}">
+                            <button class="btn btn-sm btn-secondary">Marcar como leidas</button>
+                        </form>
+
+                        <p class="mb-1"><b>Ultimas 5</b> <small class="text-muted">(lista circular)</small></p>
+                        <ul class="list-group">
+                            <li class="list-group-item" th:each="n : ${cliente.notificaciones.listar()}" th:text="${n}">
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="card mb-4">
+            <div class="card-header">Historial de transacciones <small class="text-muted">(lista enlazada)</small></div>
+            <div class="card-body">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Dia</th>
+                            <th>Tipo</th>
+                            <th>Monto</th>
+                            <th>Comision</th>
+                            <th>Puntos</th>
+                            <th>Destino / categoria</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${cliente.historial}">
+                            <td th:text="${t.id}"></td>
+                            <td th:text="${t.dia}"></td>
+                            <td th:text="${t.tipo}"></td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(t.monto, 1, 2)}"></td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(t.comision, 1, 2)}"></td>
+                            <td th:text="${t.puntos}"></td>
+                            <td th:text="${t.destino}"></td>
+                            <td>
+                                <span class="badge bg-danger" th:if="${t.revertida}">Revertida</span>
+                                <span class="badge bg-success" th:unless="${t.revertida}">OK</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
