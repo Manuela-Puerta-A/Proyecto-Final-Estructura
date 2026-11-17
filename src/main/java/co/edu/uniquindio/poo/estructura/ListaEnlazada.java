@@ -1,8 +1,8 @@
 package co.edu.uniquindio.poo.estructura;
 
-import co.edu.uniquindio.poo.nodo.Nodo;
-
 import java.util.Iterator;
+
+import co.edu.uniquindio.poo.nodo.Nodo;
 
 public class ListaEnlazada<T> implements Iterable<T> {
 

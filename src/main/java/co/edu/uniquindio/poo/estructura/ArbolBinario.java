@@ -2,7 +2,6 @@ package co.edu.uniquindio.poo.estructura;
 
 import co.edu.uniquindio.poo.nodo.NodoArbol;
 
-
 public class ArbolBinario<T extends Comparable<T>> {
 
     private NodoArbol<T> raiz;
@@ -42,14 +41,13 @@ public class ArbolBinario<T extends Comparable<T>> {
         return raizAux;
     }
 
-
     public void eliminar(T elemento) {
         raiz = eliminar(raiz, elemento);
     }
 
     private NodoArbol<T> eliminar(NodoArbol<T> raizAux, T elemento) {
         if (raizAux == null) {
-            return null; 
+            return null;
         }
         int cmp = raizAux.getElemento().compareTo(elemento);
         if (cmp > 0) {
@@ -57,7 +55,7 @@ public class ArbolBinario<T extends Comparable<T>> {
         } else if (cmp < 0) {
             raizAux.setHijoDerecho(eliminar(raizAux.getHijoDerecho(), elemento));
         } else {
-    
+
             if (raizAux.getHijoIzquierdo() == null) {
                 peso--;
                 return raizAux.getHijoDerecho();
@@ -80,6 +78,7 @@ public class ArbolBinario<T extends Comparable<T>> {
         }
         return buscarMayor(raizAux.getHijoDerecho());
     }
+
     public ListaEnlazada<T> inordenInverso() {
         ListaEnlazada<T> lista = new ListaEnlazada<>();
         inordenInverso(raiz, lista);

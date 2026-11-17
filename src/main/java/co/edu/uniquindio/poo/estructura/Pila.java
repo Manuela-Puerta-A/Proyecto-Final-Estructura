@@ -37,7 +37,6 @@ public class Pila<T> {
         return dato;
     }
 
-    
     public T peek() {
         if (isEmpty()) {
             throw new RuntimeException("No hay elementos en la pila");

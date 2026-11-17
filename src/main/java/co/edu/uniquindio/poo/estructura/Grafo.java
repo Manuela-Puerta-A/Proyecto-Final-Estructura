@@ -15,13 +15,13 @@ public class Grafo {
             adyacencia.put(vertice, new HashMap<>());
         }
     }
+
     public void agregarArista(String origen, String destino, double monto) {
         agregarVertice(origen);
         agregarVertice(destino);
         HashMap<String, Double> vecinos = adyacencia.get(origen);
         vecinos.put(destino, vecinos.getOrDefault(destino, 0.0) + monto);
     }
-
 
     public void restarArista(String origen, String destino, double monto) {
         HashMap<String, Double> vecinos = adyacencia.get(origen);
@@ -41,7 +41,6 @@ public class Grafo {
         return adyacencia.get(vertice);
     }
 
-    
     public ListaEnlazada<String> recorridoAnchura(String inicio) {
         ListaEnlazada<String> visitados = new ListaEnlazada<>();
         Cola<String> cola = new Cola<>(100);

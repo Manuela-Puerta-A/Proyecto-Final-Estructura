@@ -5,7 +5,7 @@ public class NodoArbol<T> {
     private T elemento;
     private NodoArbol<T> hijoIzquierdo;
     private NodoArbol<T> hijoDerecho;
-    private int altura; 
+    private int altura;
 
     public NodoArbol(T elemento) {
         this.elemento = elemento;
