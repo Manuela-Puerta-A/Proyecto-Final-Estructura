@@ -339,4 +339,257 @@ public class Banco {
         cambiarPuntos(cliente, -t.getPuntos(), "Se revirtio la transaccion #" + t.getId());
         cliente.notificar(dia, "Se revirtio la transaccion #" + t.getId() + " (" + t.getTipo() + ")");
     }
+
+     public void programar(String tipo, String id, String destino, double monto, int enDias, int cadaDias) {
+        validarMonto(monto);
+        buscarCliente(id);
+        if (tipo.equals("TRANSFERENCIA")) {
+            buscarCliente(destino);
+        }
+        if (enDias < 1) {
+            throw new RuntimeException("Debe ser para dentro de 1 dia o mas");
+        }
+        programadas.encolar(new Programada(tipo, id, destino, monto, dia + enDias, cadaDias));
+    }
+
+    public ListaEnlazada<Programada> getProgramadas() {
+        return programadas.listar();
+    }
+
+
+    public void avanzarDia() {
+        dia++;
+        while (!programadas.isEmpty() && programadas.peek().getDia() <= dia) {
+            Programada p = programadas.desencolar();
+            Cliente cliente = buscarCliente(p.getClienteId());
+            try {
+                if (p.getTipo().equals("DEPOSITO")) {
+                    depositar(p.getClienteId(), p.getMonto());
+                } else if (p.getTipo().equals("RETIRO")) {
+                    retirar(p.getClienteId(), p.getMonto());
+                } else {
+                    transferir(p.getClienteId(), p.getDestinoId(), p.getMonto());
+                }
+                cliente.notificar(dia, "Se ejecuto tu " + p.getTipo() + " programado de $" + dinero(p.getMonto()));
+            } catch (RuntimeException e) {
+                cliente.notificar(dia, "No se pudo ejecutar tu " + p.getTipo() + " programado: " + e.getMessage());
+            }
+            if (p.getCadaDias() > 0) { 
+                p.setDia(dia + p.getCadaDias());
+                programadas.encolar(p);
+            }
+        }
+        for (Programada p : programadas.listar()) {
+            if (p.getDia() == dia + 1) {
+                buscarCliente(p.getClienteId()).notificar(dia, "Recordatorio: manana se ejecuta tu "
+                        + p.getTipo() + " de $" + dinero(p.getMonto()));
+            }
+        }
+    }
+
+
+    public ListaEnlazada<String> leerNotificaciones(String id) {
+        return buscarCliente(id).leerNotificaciones();
+    }
+
+
+    public HashMap<String, Double> transferenciasDe(String id) {
+        return grafoTransferencias.getVecinos(id);
+    }
+
+   
+    public ListaEnlazada<String> redDeTransferencias(String id) {
+        return grafoTransferencias.recorridoAnchura(id);
+    }
+
+   
+    public HashMap<String, Double> gastosPorCategoria(String id) {
+        return grafoGastos.getVecinos(id);
+    }
+
+
+    public String categoriaPrincipal(String id) {
+        String mayor = "Ninguna";
+        double montoMayor = 0;
+        for (String categoria : gastosPorCategoria(id).keySet()) {
+            double monto = gastosPorCategoria(id).get(categoria);
+            if (monto > montoMayor) {
+                montoMayor = monto;
+                mayor = categoria;
+            }
+        }
+        return mayor;
+    }
+
+
+    public HashMap<String, Double> gastoTotalPorCategoria() {
+        HashMap<String, Double> totales = new HashMap<>();
+        for (String id : clientes.keySet()) {
+            HashMap<String, Double> gastos = gastosPorCategoria(id);
+            for (String categoria : gastos.keySet()) {
+                totales.put(categoria, totales.getOrDefault(categoria, 0.0) + gastos.get(categoria));
+            }
+        }
+        return totales;
+    }
+
+   
+    public ListaEnlazada<String> patronesDeGasto() {
+        ListaEnlazada<String> patrones = new ListaEnlazada<>();
+        for (String categoria : CATEGORIAS) {
+            HashMap<String, Double> siguientes = grafoGastos.getVecinos(categoria);
+            for (String siguiente : siguientes.keySet()) {
+                int veces = (int) Math.round(siguientes.get(siguiente));
+                patrones.agregarFinal("Despues de " + categoria + " gastan en " + siguiente + " (" + veces + " veces)");
+            }
+        }
+        return patrones;
+    }
+
+   
+    public ListaEnlazada<String> movimientosDeMonederos(String id) {
+        ListaEnlazada<String> lista = new ListaEnlazada<>();
+        String[] monederos = {id + "-Principal", id + "-Ahorros"};
+        for (String monedero : monederos) {
+            HashMap<String, Double> destinos = grafoMonederos.getVecinos(monedero);
+            for (String destino : destinos.keySet()) {
+                lista.agregarFinal(monedero + " -> " + destino + ": $" + dinero(destinos.get(destino)));
+            }
+        }
+        return lista;
+    }
+
+    
+    public ListaEnlazada<String> verificarIntegridad(String id) {
+        ListaEnlazada<String> resultado = new ListaEnlazada<>();
+        Cliente cliente = buscarCliente(id);
+
+        double saldoCalculado = sumarSaldo(cliente.getHistorial().getPrimero(), id);
+        double saldoReal = cliente.getSaldo() + cliente.getAhorros();
+        if (Math.abs(saldoCalculado - saldoReal) > 0.01) {
+            resultado.agregarFinal("ERROR: el historial da $" + dinero(saldoCalculado) + " pero el cliente tiene $" + dinero(saldoReal));
+        } else {
+            resultado.agregarFinal("OK: el saldo total ($" + dinero(saldoReal) + ") coincide con el historial");
+        }
+
+        int puntosCalculados = sumarPuntos(cliente.getHistorial().getPrimero(), id);
+        if (puntosCalculados != cliente.getPuntos() || puntosCalculados != consultarPuntos(id)) {
+            resultado.agregarFinal("ERROR: el historial da " + puntosCalculados + " puntos pero hay " + cliente.getPuntos());
+        } else {
+            resultado.agregarFinal("OK: los puntos (" + puntosCalculados + ") coinciden con el historial y la tabla hash");
+        }
+
+        int disponibles = sumarMovimientos(cliente.getHistorialPuntos().getPrimero());
+        if (disponibles != cliente.getPuntosDisponibles()) {
+            resultado.agregarFinal("ERROR: el historial de puntos da " + disponibles + " disponibles");
+        } else {
+            resultado.agregarFinal("OK: el historial de puntos da los " + disponibles + " puntos disponibles");
+        }
+
+        if (arbolPuntos.esValido() && arbolRangos.estaBalanceado()) {
+            resultado.agregarFinal("OK: el ABB esta ordenado y el AVL esta balanceado");
+        } else {
+            resultado.agregarFinal("ERROR: los arboles de puntos estan mal");
+        }
+        return resultado;
+    }
+
+    private double sumarSaldo(Nodo<Transaccion> nodo, String id) {
+        if (nodo == null) {
+            return 0;
+        }
+        Transaccion t = nodo.getDato();
+        double efecto = 0;
+        if (!t.isRevertida()) {
+            if (t.getTipo().equals("DEPOSITO") || t.getTipo().equals("BONO")) {
+                efecto = t.getMonto();
+            } else if (t.getTipo().equals("RETIRO") || t.getTipo().equals("GASTO")) {
+                efecto = -t.getMonto() - t.getComision();
+            } else if (t.getTipo().equals("TRANSFERENCIA")) {
+                if (t.getOrigen().equals(id)) {
+                    efecto = -t.getMonto() - t.getComision();
+                } else {
+                    efecto = t.getMonto(); 
+                }
+            }
+           
+        }
+        return efecto + sumarSaldo(nodo.getSiguiente(), id);
+    }
+
+    private int sumarPuntos(Nodo<Transaccion> nodo, String id) {
+        if (nodo == null) {
+            return 0;
+        }
+        Transaccion t = nodo.getDato();
+        int puntos = 0;
+        if (!t.isRevertida() && t.getOrigen().equals(id)) {
+            puntos = t.getPuntos();
+        }
+        return puntos + sumarPuntos(nodo.getSiguiente(), id);
+    }
+
+    private int sumarMovimientos(Nodo<MovimientoPuntos> nodo) {
+        if (nodo == null) {
+            return 0;
+        }
+        return nodo.getDato().getCantidad() + sumarMovimientos(nodo.getSiguiente());
+    }
+
+   
+    private void registrar(Cliente cliente, Transaccion t) {
+        cliente.getHistorial().agregarFinal(t);
+        cliente.getReversibles().push(t);
+        cambiarPuntos(cliente, t.getPuntos(), t.getTipo() + " de $" + dinero(t.getMonto()) + " (#" + t.getId() + ")");
+    }
+
+    private void alertaSaldoBajo(Cliente cliente) {
+        if (cliente.getSaldo() < 50) {
+            cliente.notificar(dia, "ALERTA: tu saldo esta bajo ($" + dinero(cliente.getSaldo()) + ")");
+        }
+    }
+
+    private void validarMonto(double monto) {
+        if (monto <= 0) {
+            throw new RuntimeException("El monto debe ser mayor que 0");
+        }
+    }
+
+    private boolean esCategoria(String categoria) {
+        for (String c : CATEGORIAS) {
+            if (c.equals(categoria)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void cargarDatosDePrueba() {
+        registrarCliente("C1", "Ana Gomez");
+        registrarCliente("C2", "Luis Perez");
+        registrarCliente("C3", "Sara Rios");
+        registrarCliente("C4", "Juan Diaz");
+        depositar("C1", 50000);
+        depositar("C2", 20000);
+        depositar("C3", 8000);
+        depositar("C4", 3000);
+        retirar("C1", 1200);
+        transferir("C1", "C2", 5000);
+        transferir("C2", "C3", 3000);
+        transferir("C3", "C4", 500);
+        gastar("C1", "Comida", 300);
+        gastar("C1", "Transporte", 80);
+        gastar("C1", "Comida", 250);
+        gastar("C2", "Comida", 120);
+        gastar("C2", "Entretenimiento", 400);
+        gastar("C3", "Servicios", 900);
+        moverDinero("C1", "Ahorros", 10000);
+        programar("DEPOSITO", "C2", null, 1000, 1, 7);
+        programar("TRANSFERENCIA", "C1", "C3", 200, 2, 0);
+    }
+
+
+    private String dinero(double valor) {
+        return String.format("%.2f", valor);
+    }
 }
